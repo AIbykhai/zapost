@@ -1,0 +1,104 @@
+name: Deploy Backend to Render
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Debug Working Directory
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Directory contents:"
+          ls -la
+          echo "Parent directory contents:"
+          ls -la ..
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install Dependencies
+        run: npm ci
+        
+      - name: Debug Environment Variables
+        run: |
+          echo "Checking environment variables:"
+          if [ -n "$DATABASE_URL" ]; then
+            echo "DATABASE_URL is set"
+          else
+            echo "DATABASE_URL is not set"
+          fi
+          if [ -n "$AUTH0_DOMAIN" ]; then
+            echo "AUTH0_DOMAIN is set"
+          else
+            echo "AUTH0_DOMAIN is not set"
+          fi
+          if [ -n "$AUTH0_CLIENT_ID" ]; then
+            echo "AUTH0_CLIENT_ID is set"
+          else
+            echo "AUTH0_CLIENT_ID is not set"
+          fi
+          if [ -n "$AUTH0_CLIENT_SECRET" ]; then
+            echo "AUTH0_CLIENT_SECRET is set"
+          else
+            echo "AUTH0_CLIENT_SECRET is not set"
+          fi
+          if [ -n "$AUTH0_CALLBACK_URL" ]; then
+            echo "AUTH0_CALLBACK_URL is set"
+          else
+            echo "AUTH0_CALLBACK_URL is not set"
+          fi
+          if [ -n "$FRONTEND_URL" ]; then
+            echo "FRONTEND_URL is set"
+          else
+            echo "FRONTEND_URL is not set"
+          fi
+          if [ -n "$JWT_SECRET" ]; then
+            echo "JWT_SECRET is set"
+          else
+            echo "JWT_SECRET is not set"
+          fi
+        
+      - name: Build
+        run: npm run build
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          AUTH0_DOMAIN: ${{ secrets.AUTH0_DOMAIN }}
+          AUTH0_CLIENT_ID: ${{ secrets.AUTH0_CLIENT_ID }}
+          AUTH0_CLIENT_SECRET: ${{ secrets.AUTH0_CLIENT_SECRET }}
+          AUTH0_CALLBACK_URL: ${{ secrets.AUTH0_CALLBACK_URL }}
+          FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          
+      - name: Run Tests
+        run: npm test
+        
+      - name: Debug Render Configuration
+        run: |
+          echo "Checking Render configuration:"
+          if [ -n "$RENDER_SERVICE_ID" ]; then
+            echo "RENDER_SERVICE_ID is set"
+          else
+            echo "RENDER_SERVICE_ID is not set"
+          fi
+          if [ -n "$RENDER_API_KEY" ]; then
+            echo "RENDER_API_KEY is set"
+          else
+            echo "RENDER_API_KEY is not set"
+          fi
+          
+      - name: Deploy to Render
+        uses: render-actions/deploy@v1
+        with:
+          service-id: ${{ secrets.RENDER_SERVICE_ID }}
+          api-key: ${{ secrets.RENDER_API_KEY }}
+          working-directory: . 
